@@ -1,59 +1,49 @@
-namespace BabylonBlazor.Client.Pages
+namespace BabylonBlazor.Client.Pages;
+
+using BabylonBlazor.Client.Game;
+using BlazorPro.BlazorSize;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using System;
+using System.Threading.Tasks;
+
+public partial class Index : IDisposable
 {
-    using System;
-    using System.Threading.Tasks;
-    using BABYLON;
-    using BabylonBlazor.Client.Extensions;
-    using BabylonBlazor.Client.HTML;
-    using EventHorizon.Blazor.Interop.Callbacks;
-    using Microsoft.AspNetCore.Components.Web;
+    [Inject]
+    public ResizeListener ResizeListener { get; set; } = null!;
 
-    public partial class Index
+    private GameApp _app;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        private Engine _engine;
-        private DebugLayerScene _scene;
-        protected override void OnAfterRender(bool firstRender)
+        if (firstRender)
         {
-            if (firstRender)
+            _app = new GameApp("game-window");
+            await _app.Main();
+            ResizeListener.OnResized += HandleWindowResize;
+        }
+    }
+    private void HandleWindowResize(object sender, BrowserWindowSize e)
+    {
+        _app?.Resize();
+    }
+
+    public void Dispose()
+    {
+        _app?.Dispose();
+    }
+
+    protected async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.ShiftKey && args.CtrlKey && args.AltKey && args.Key.ToLower() == "i")
+        {
+            if (_app.DebugLayer.isVisible())
             {
-                CreateScene();
+                _app.DebugLayer.hide();
             }
-        }
-
-        public void Dispose()
-        {
-            _engine?.dispose();
-        }
-
-        public void CreateScene()
-        {
-            var canvas = Canvas.GetElementById("game-window");
-            var engine = new Engine(canvas, true);
-            // We extend the standard Scene with the DebugLayer getter in the DebugLayerScene
-            _scene = new DebugLayerScene(engine);
-            var light1 = new HemisphericLight("light1", new Vector3(0, 2, 8), _scene);
-            var camera = new ArcRotateCamera("Camera", (decimal)(Math.PI / 2), (decimal)(Math.PI / 4), 2, Vector3.Zero(), _scene);
-            _scene.activeCamera = camera;
-            camera.attachControl(false);
-            var sphere = MeshBuilder.CreateSphere("sphere", new { diameter = 1 }, _scene);
-            engine.runRenderLoop(new ActionCallback(() => Task.Run(() => _scene.render(true, false))));
-            _engine = engine;
-        }
-
-        protected void HandleKeyDown(KeyboardEventArgs args)
-        {
-            Console.WriteLine(args.Key);
-            if (args.ShiftKey && args.CtrlKey && args.AltKey && args.Key.ToLower() == "i")
+            else
             {
-                if (_scene.debugLayer.isVisible())
-                {
-                    Console.WriteLine("Hello");
-                    _scene.debugLayer.hide();
-                }
-                else
-                {
-                    _scene.debugLayer.show();
-                }
+                await _app.DebugLayer.show();
             }
         }
     }

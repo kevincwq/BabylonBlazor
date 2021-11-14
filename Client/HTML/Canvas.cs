@@ -1,20 +1,19 @@
-﻿namespace BabylonBlazor.Client.HTML
+﻿namespace BabylonBlazor.Client.HTML;
+
+using EventHorizon.Blazor.Interop;
+using System.Text.Json.Serialization;
+
+[JsonConverter(typeof(CachedEntityConverter<Canvas>))]
+public class Canvas : HTMLCanvasElementCachedEntity
 {
-    using EventHorizon.Blazor.Interop;
-    using System.Text.Json.Serialization;
+    public static Canvas GetElementById(string elementId) => EventHorizonBlazorInterop.FuncClass(
+        entity => new Canvas(entity),
+        new string[] { "document", "getElementById" },
+        elementId
+    );
 
-    [JsonConverter(typeof(CachedEntityConverter<Canvas>))]
-    public class Canvas : HTMLCanvasElementCachedEntity
+    private Canvas(ICachedEntity entity)
     {
-        public static Canvas GetElementById(string elementId) => EventHorizonBlazorInterop.FuncClass(
-            entity => new Canvas(entity),
-            new string[] { "document", "getElementById" },
-            elementId
-        );
-
-        private Canvas(ICachedEntity entity)
-        {
-            ___guid = entity.___guid;
-        }
+        ___guid = entity.___guid;
     }
 }
